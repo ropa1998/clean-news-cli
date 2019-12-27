@@ -4,10 +4,8 @@
 # Ignore Gradle build output directory
 build
 # Ignore Gradle project-specific cache directory
-.gradle
 
 # Ignore Gradle build output directory
-build
 
 # Created by https://www.gitignore.io/api/java,gradle,intellij+all
 # Edit at https://www.gitignore.io/?templates=java,gradle,intellij+all
@@ -124,7 +122,6 @@ modules.xml
 hs_err_pid*
 
 ### Gradle ###
-.gradle
 build/
 
 # Ignore Gradle GUI config

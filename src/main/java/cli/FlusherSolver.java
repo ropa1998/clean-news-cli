@@ -4,30 +4,26 @@ package cli;
 import flusher.FileFlusher;
 import flusher.IFlusher;
 import flusher.SoutFlusher;
+import org.apache.commons.cli.CommandLine;
 
-import java.util.Set;
-
-public class FlusherSolver extends AbstractArgsSolver {
+public class FlusherSolver extends AbstractSolver<IFlusher> {
 
 
-    private final Set<IFlusher> flushers;
-
-    public FlusherSolver(Set<IFlusher> flusher, String flag, String flusherKeyword) {
-        super(flag, flusherKeyword);
-        this.flushers = flusher;
+    public FlusherSolver(CommandLine cmd, String flusherKeyword) {
+        super(cmd, flusherKeyword);
     }
 
-    @Override
-    protected void solve(String arg) {
+
+    protected IFlusher solve(String arg) {
         switch (arg) {
             case "console":
-                flushers.add(new SoutFlusher());
-                break;
+                return new SoutFlusher();
             case "file":
-                flushers.add(new FileFlusher("clean-news-results.txt"));
-                break;
+                return new FileFlusher("clean-news-results.txt");
             default:
-
+                return null;
         }
     }
+
+
 }

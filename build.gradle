@@ -38,6 +38,7 @@ dependencies {
     compile files('/home/rodrigo/projects/clean-news-core/build/libs/clean-news-core-all.jar')
     compile files('/home/rodrigo/projects/clean-news-services/build/libs/clean-news-services-all.jar')
     compile files('/home/rodrigo/projects/clean-news-utils/build/libs/clean-news-utils-all.jar')
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
 }
 

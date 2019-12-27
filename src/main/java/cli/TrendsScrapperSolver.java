@@ -2,27 +2,27 @@ package cli;
 
 import factory.trendScrapper.ITrendScrapperFactory;
 import implementations.scrappers.trend.ITrendScrapper;
+import org.apache.commons.cli.CommandLine;
 
-import java.util.Set;
-
-public class TrendsScrapperSolver extends AbstractArgsSolver {
+public class TrendsScrapperSolver extends AbstractSolver<ITrendScrapper> {
 
     private final ITrendScrapperFactory trendScrapperFactory;
-    private final Set<ITrendScrapper> trendScrappers;
 
-    public TrendsScrapperSolver(Set<ITrendScrapper> trendScrappers, ITrendScrapperFactory trendScrapperFactory, String flag, String keyword) {
-        super(flag, keyword);
-        this.trendScrappers = trendScrappers;
+
+    public TrendsScrapperSolver(ITrendScrapperFactory trendScrapperFactory, CommandLine cmd, String trendKeyword) {
+        super(cmd, trendKeyword);
         this.trendScrapperFactory = trendScrapperFactory;
     }
 
 
-    protected void solve(String arg) {
+    protected ITrendScrapper solve(String arg) {
         switch (arg) {
             case "argentina":
-                trendScrappers.add(trendScrapperFactory.getArgentinaScrapper());
+                return trendScrapperFactory.getArgentinaScrapper();
             default:
-
+                return null;
         }
     }
+
+
 }

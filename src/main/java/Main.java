@@ -4,13 +4,20 @@ import cli.AbstractSolver;
 import cli.FlusherSolver;
 import cli.MediumScrapperSolver;
 import cli.TrendsScrapperSolver;
+import com.gargoylesoftware.htmlunit.WebClient;
 import factory.mediumScrapper.IMediumScrapperFactory;
+import factory.mediumScrapper.RSSMediumScrapperFactory;
 import factory.trendScrapper.ITrendScrapperFactory;
+import factory.trendScrapper.Trends24ScrapperFactory;
 import flusher.IFlusher;
+import implementations.CleanNewsEngine;
+import implementations.core.cleanNewsResult.ICleanNewsResult;
+import implementations.factory.webclient.WebClientFactory;
 import implementations.scrappers.medium.IMediumScrapper;
 import implementations.scrappers.trend.ITrendScrapper;
 import org.apache.commons.cli.*;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class Main {
@@ -18,13 +25,52 @@ public class Main {
 
     final private static String trendKeyword = "trends";
     final private static String mediumKeyword = "media";
-    final private static String flusherKeyword = "flusher";
+    final private static String flusherKeyword = "flushers";
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) {
+        Options options = generateProgramOptions();
+        generateHelp(options);
 
-        Option trendsOption = new Option(trendKeyword, "Specify the trend region you want to scrap");
-        Option flusherOption = new Option(flusherKeyword, "Specify in which ways you want your information to be flushed.");
+        Set<ITrendScrapper> trendScrappers = new HashSet<>();
+        Set<IMediumScrapper> mediumScrappers = new HashSet<>();
+        Set<IFlusher> flushers = new HashSet<>();
 
+        WebClient webClient = getWebClient();
+
+        IMediumScrapperFactory mediumScrapperFactory = new RSSMediumScrapperFactory(webClient);
+        ITrendScrapperFactory trendScrapperFactory = new Trends24ScrapperFactory(webClient);
+
+        CommandLineParser parser = new DefaultParser();
+        try {
+            CommandLine line = parser.parse(options, args);
+
+            trendScrappers = getTrendScrappers(trendScrapperFactory, line);
+            mediumScrappers = getMediumScrappers(mediumScrapperFactory, line);
+            flushers = getFlushers(line);
+        } catch (ParseException exp) {
+            System.err.println("Parsing failed.  Reason: " + exp.getMessage());
+        }
+
+
+        CleanNewsEngine cleanNewsEngine = new CleanNewsEngine(mediumScrappers, trendScrappers);
+        cleanNewsEngine.run();
+
+        ICleanNewsResult cleanNewsResult = cleanNewsEngine.getResult();
+
+        for (IFlusher flusher : flushers) {
+            flusher.flush(cleanNewsResult);
+        }
+    }
+
+    private static WebClient getWebClient() {
+        WebClientFactory webClientFactory = new WebClientFactory();
+        return webClientFactory.getBasicWebClient();
+    }
+
+
+    private static Options generateProgramOptions() {
+        Option trendsOption = Option.builder(trendKeyword).hasArgs().argName("trend titles").desc("Specify the trend region you want to scrap").build();
+        Option flusherOption = Option.builder(flusherKeyword).hasArgs().argName("trend titles").desc("Specify in which ways you want your information to be flushed.").build();
         Option mediaOption = Option.builder(mediumKeyword).hasArgs().argName("media titles").desc("Specify the media you want scrapped. The supported media are: ").build();
 
         Options options = new Options();
@@ -33,87 +79,25 @@ public class Main {
         options.addOption(mediaOption);
         options.addOption(flusherOption);
 
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("clean-news-cli", options);
-
-        // create the parser
-        CommandLineParser parser = new DefaultParser();
-        try {
-            // parse the command line arguments
-            CommandLine line = parser.parse(options, args);
-            if (line.hasOption(mediumKeyword)) {
-                System.out.println("Has medium");
-            }
-            if (line.hasOption(flusherKeyword)) {
-                System.out.println("Has flushers");
-            }
-            if (line.hasOption(trendKeyword)) {
-                System.out.println("Has trends");
-            }
-        } catch (ParseException exp) {
-            // oops, something went wrong
-            System.err.println("Parsing failed.  Reason: " + exp.getMessage());
-        }
-
-
-//        WebClientFactory webClientFactory = new WebClientFactory();
-//        WebClient webClient = webClientFactory.getBasicWebClient();
-//
-//        IMediumScrapperFactory mediumScrapperFactory = new RSSMediumScrapperFactory(webClient);
-//        ITrendScrapperFactory trendScrapperFactory = new Trends24ScrapperFactory(webClient);
-//
-//        Set<ITrendScrapper> trendScrappers = getTrendScrappers(trendScrapperFactory, args);
-//        Set<IMediumScrapper> mediumScrappers = getMediumScrappers(mediumScrapperFactory, args);
-//        Set<IFlusher> flushers = getFlushers(args);
-//
-//        CleanNewsEngine cleanNewsEngine = new CleanNewsEngine(mediumScrappers, trendScrappers);
-//        cleanNewsEngine.run();
-//
-//        ICleanNewsResult cleanNewsResult = cleanNewsEngine.getResult();
-//
-//        for (IFlusher flusher : flushers) {
-//            flusher.flush(cleanNewsResult);
-//        }
+        return options;
     }
 
-    private static Set<IFlusher> getFlushers(String[] args) throws ParseException {
-        Option flusherOption = new Option(flusherKeyword, "How the user wants to flush the results");
-        flusherOption.setArgs(Option.UNLIMITED_VALUES);
+    private static void generateHelp(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("clean-news-cli", options);
+    }
 
-        Options options = new Options();
-        options.addOption(flusherOption);
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
+    private static Set<IFlusher> getFlushers(CommandLine cmd) {
         AbstractSolver<IFlusher> flusherArgsSolver = new FlusherSolver(cmd, flusherKeyword);
         return flusherArgsSolver.getResult();
     }
 
-    private static Set<IMediumScrapper> getMediumScrappers(IMediumScrapperFactory mediumScrapperFactory, String[] args) throws ParseException {
-        Option mediaOption = new Option(mediumKeyword, "The media the user wants to scrap");
-        mediaOption.setArgs(Option.UNLIMITED_VALUES);
-
-        Options options = new Options();
-        options.addOption(mediaOption);
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
+    private static Set<IMediumScrapper> getMediumScrappers(IMediumScrapperFactory mediumScrapperFactory, CommandLine cmd) {
         AbstractSolver<IMediumScrapper> mediumScrapperArgsSolver = new MediumScrapperSolver(mediumScrapperFactory, cmd, mediumKeyword);
         return mediumScrapperArgsSolver.getResult();
     }
 
-    private static Set<ITrendScrapper> getTrendScrappers(ITrendScrapperFactory trendScrapperFactory, String[] args) throws ParseException {
-        Option trendOption = new Option(trendKeyword, "The trend region the user wants to scrap");
-        trendOption.setArgs(Option.UNLIMITED_VALUES);
-
-        Options options = new Options();
-        options.addOption(trendOption);
-
-        CommandLineParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
+    private static Set<ITrendScrapper> getTrendScrappers(ITrendScrapperFactory trendScrapperFactory, CommandLine cmd) {
         AbstractSolver<ITrendScrapper> trendsScrapperArgsSolver = new TrendsScrapperSolver(trendScrapperFactory, cmd, trendKeyword);
         return trendsScrapperArgsSolver.getResult();
     }

@@ -18,9 +18,9 @@ public class MediumScrapperSolver extends AbstractSolver<IMediumScrapper> {
     protected IMediumScrapper solve(String arg) {
         switch (arg) {
             case "lanacion":
-                mediumScrapperFactory.getLaNacionScrapper();
+                return mediumScrapperFactory.getLaNacionScrapper();
             case "pagina12":
-                mediumScrapperFactory.getPagina12Scrapper();
+                return mediumScrapperFactory.getPagina12Scrapper();
             default:
                 return null;
         }

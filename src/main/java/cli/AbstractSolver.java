@@ -13,15 +13,22 @@ public abstract class AbstractSolver<T> {
     public AbstractSolver(CommandLine cmd, String keyword) {
         this.elements = new HashSet<>();
         this.keyword = keyword;
+        this.cmd = cmd;
     }
 
 
     public Set<T> getResult() {
-        String args[] = cmd.getOptionValues(keyword);
-        List<String> argsList = new ArrayList<>(Arrays.asList(args));
-        for (String arg : argsList) {
-            elements.add(solve(arg));
+
+        try {
+            String args[] = cmd.getOptionValues(keyword);
+            List<String> argsList = new ArrayList<>(Arrays.asList(args));
+            for (String arg : argsList) {
+                elements.add(solve(arg));
+            }
+        } catch (Exception e) {
+
         }
+
         return elements;
     }
 

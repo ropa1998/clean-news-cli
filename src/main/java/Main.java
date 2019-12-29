@@ -4,15 +4,9 @@ import cli.AbstractSolver;
 import cli.FlusherSolver;
 import cli.MediumScrapperSolver;
 import cli.TrendsScrapperSolver;
-import com.gargoylesoftware.htmlunit.WebClient;
 import factory.mediumScrapper.IMediumScrapperFactory;
-import factory.mediumScrapper.RSSMediumScrapperFactory;
 import factory.trendScrapper.ITrendScrapperFactory;
-import factory.trendScrapper.Trends24ScrapperFactory;
 import flusher.IFlusher;
-import implementations.CleanNewsEngine;
-import implementations.core.cleanNewsResult.ICleanNewsResult;
-import implementations.factory.webclient.WebClientFactory;
 import implementations.scrappers.medium.IMediumScrapper;
 import implementations.scrappers.trend.ITrendScrapper;
 import org.apache.commons.cli.*;
@@ -28,24 +22,58 @@ public class Main {
 
     public static void main(String[] args) throws ParseException {
 
-        WebClientFactory webClientFactory = new WebClientFactory();
-        WebClient webClient = webClientFactory.getBasicWebClient();
+        Option trendsOption = new Option(trendKeyword, "Specify the trend region you want to scrap");
+        Option flusherOption = new Option(flusherKeyword, "Specify in which ways you want your information to be flushed.");
 
-        IMediumScrapperFactory mediumScrapperFactory = new RSSMediumScrapperFactory(webClient);
-        ITrendScrapperFactory trendScrapperFactory = new Trends24ScrapperFactory(webClient);
+        Option mediaOption = Option.builder(mediumKeyword).hasArgs().argName("media titles").desc("Specify the media you want scrapped. The supported media are: ").build();
 
-        Set<ITrendScrapper> trendScrappers = getTrendScrappers(trendScrapperFactory, args);
-        Set<IMediumScrapper> mediumScrappers = getMediumScrappers(mediumScrapperFactory, args);
-        Set<IFlusher> flushers = getFlushers(args);
+        Options options = new Options();
 
-        CleanNewsEngine cleanNewsEngine = new CleanNewsEngine(mediumScrappers, trendScrappers);
-        cleanNewsEngine.run();
+        options.addOption(trendsOption);
+        options.addOption(mediaOption);
+        options.addOption(flusherOption);
 
-        ICleanNewsResult cleanNewsResult = cleanNewsEngine.getResult();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("clean-news-cli", options);
 
-        for (IFlusher flusher : flushers) {
-            flusher.flush(cleanNewsResult);
+        // create the parser
+        CommandLineParser parser = new DefaultParser();
+        try {
+            // parse the command line arguments
+            CommandLine line = parser.parse(options, args);
+            if (line.hasOption(mediumKeyword)) {
+                System.out.println("Has medium");
+            }
+            if (line.hasOption(flusherKeyword)) {
+                System.out.println("Has flushers");
+            }
+            if (line.hasOption(trendKeyword)) {
+                System.out.println("Has trends");
+            }
+        } catch (ParseException exp) {
+            // oops, something went wrong
+            System.err.println("Parsing failed.  Reason: " + exp.getMessage());
         }
+
+
+//        WebClientFactory webClientFactory = new WebClientFactory();
+//        WebClient webClient = webClientFactory.getBasicWebClient();
+//
+//        IMediumScrapperFactory mediumScrapperFactory = new RSSMediumScrapperFactory(webClient);
+//        ITrendScrapperFactory trendScrapperFactory = new Trends24ScrapperFactory(webClient);
+//
+//        Set<ITrendScrapper> trendScrappers = getTrendScrappers(trendScrapperFactory, args);
+//        Set<IMediumScrapper> mediumScrappers = getMediumScrappers(mediumScrapperFactory, args);
+//        Set<IFlusher> flushers = getFlushers(args);
+//
+//        CleanNewsEngine cleanNewsEngine = new CleanNewsEngine(mediumScrappers, trendScrappers);
+//        cleanNewsEngine.run();
+//
+//        ICleanNewsResult cleanNewsResult = cleanNewsEngine.getResult();
+//
+//        for (IFlusher flusher : flushers) {
+//            flusher.flush(cleanNewsResult);
+//        }
     }
 
     private static Set<IFlusher> getFlushers(String[] args) throws ParseException {

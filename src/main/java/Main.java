@@ -22,7 +22,6 @@ import java.util.Set;
 
 public class Main {
 
-
     final private static String trendKeyword = "trends";
     final private static String mediumKeyword = "media";
     final private static String flusherKeyword = "flushers";
@@ -31,17 +30,17 @@ public class Main {
         Options options = generateProgramOptions();
         generateHelp(options);
 
-        Set<ITrendScrapper> trendScrappers = new HashSet<>();
-        Set<IMediumScrapper> mediumScrappers = new HashSet<>();
-        Set<IFlusher> flushers = new HashSet<>();
-
         WebClient webClient = getWebClient();
 
         IMediumScrapperFactory mediumScrapperFactory = new RSSMediumScrapperFactory(webClient);
         ITrendScrapperFactory trendScrapperFactory = new Trends24ScrapperFactory(webClient);
 
-        CommandLineParser parser = new DefaultParser();
+        Set<ITrendScrapper> trendScrappers = new HashSet<>();
+        Set<IMediumScrapper> mediumScrappers = new HashSet<>();
+        Set<IFlusher> flushers = new HashSet<>();
+
         try {
+            CommandLineParser parser = new DefaultParser();
             CommandLine line = parser.parse(options, args);
 
             trendScrappers = getTrendScrappers(trendScrapperFactory, line);
